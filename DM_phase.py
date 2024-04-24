@@ -51,7 +51,7 @@ def _load_psrchive(fname):
     archive.dedisperse()
     archive.set_dedispersed(False)
     archive.tscrunch()
-    archive.centre()
+    # archive.centre()
     weights = archive.get_weights().squeeze()
     waterfall = np.ma.masked_array(archive.get_data().squeeze())
     waterfall[weights == 0] = np.ma.masked
@@ -145,7 +145,8 @@ def _get_f_threshold(power_spectra, mean, std):
 
 def _get_dm_curve(power_spectra, dpower_spectra,nchan):
     """Get the integrated fluctuation frequency for each spectrum.
-    The cutoff for each spectrum is calculated by minimizing the variance of the noise."""
+    The cutoff for each spectrum is calculated by minimizing 
+    the variance of the noise."""
 
     n = power_spectra.shape[0]
     m = power_spectra.shape[1]
@@ -160,14 +161,16 @@ def _get_dm_curve(power_spectra, dpower_spectra,nchan):
         num_el
     )
     var = np.divide( (S2 - S**2), num_el)
-    var_sm = scipy.signal.convolve2d(var, np.ones([9, 3]) /27 , mode='same', boundary='wrap')
+    var_sm = scipy.signal.convolve2d(var, np.ones([9, 3]) /27 , mode='same', 
+            boundary='wrap')
     idx_f = np.argmin(var_sm[:-10, :], axis=0)
     idx_c = np.convolve(idx_f, np.ones(3) / 3., mode='same').astype(int)
     idx_c[idx_c==0] = 1
     idx_c = np.ones(np.shape(idx_c))*(idx_c)
     I = np.ones([n, 1]) * idx_c
     I2_sum = np.multiply(np.multiply(idx_c,idx_c+1),2*idx_c+1)/6
-    I4_sum = np.multiply(np.multiply(np.multiply(idx_c,idx_c+1),2*idx_c+1),3*idx_c+3*idx_c-1)/30
+    I4_sum = np.multiply(np.multiply(
+            np.multiply(idx_c,idx_c+1),2*idx_c+1),3*idx_c+3*idx_c-1)/30
 
     Lo = np.multiply(Y <= I, dpower_spectra)
     Lo1= np.multiply(Y <= I, np.multiply(power_spectra,dpower_spectra))
@@ -183,7 +186,8 @@ def _get_dm_curve(power_spectra, dpower_spectra,nchan):
     Dem  = ( 2.0* nchan**2 * ( I4_sum + 2.0 * I2_sum) )**0.5
     SN =  np.divide( ( dm_curve - 1.0*Noise_curve ), Dem )
     #SN_Err = ( 1 + 2*nchan**2 * (1.0*I4_sum + 2.0*I2_sum) / Dem**2)**0.5
-    SN_Err = (np.divide(Var_dp,Dem**2) + 1 + np.multiply( np.divide(SN**2,idx_c), (1 + 8*nchan**2 / Dem**2 ) ) )**0.5
+    SN_Err = (np.divide(Var_dp,Dem**2) + 1 + np.multiply(
+            np.divide(SN**2,idx_c), (1 + 8*nchan**2 / Dem**2 ) ) )**0.5
     #SN_Err = np.divide(SN_Err,SN)
     SN[np.isnan(SN)]=0.
 
@@ -425,7 +429,8 @@ def _get_f_threshold_manual(power_spectra, dpower_spectra, waterfall, dm_list,
     dm, _ = _dm_calculation(waterfall, power_spectra, dpower_spectra,
                             bottom_lim[-1], top_lim[-1], f_channels, t_res,
                             dm_list, no_plots=True, fname="", phase_lim=None,
-                           blackonwhite=False, fformat=".pdf", dm_curve=None, weight=None)
+                           blackonwhite=True, fformat=".pdf", dm_curve=None, 
+                           weight=None)
     waterfall_dedisp = _dedisperse_waterfall(waterfall, dm, f_channels, t_res,
                                              ref_freq=ref_freq)
     plot_wat_map = ax_wat_map.imshow(waterfall_dedisp, origin='lower',
@@ -477,7 +482,8 @@ def _get_f_threshold_manual(power_spectra, dpower_spectra, waterfall, dm_list,
         dm, _ = _dm_calculation(waterfall, power_spectra, dpower_spectra,
                                 bottom_lim[-1], top_lim[-1], f_channels, t_res,
                                 dm_list, no_plots=True, fname="",phase_lim=None,
-                                blackonwhite=False, fformat=".pdf", dm_curve=None, weight=None)
+                                blackonwhite=False, fformat=".pdf", 
+                                dm_curve=None, weight=None)
         waterfall_dedisp = _dedisperse_waterfall(waterfall, dm, f_channels,
                                                  t_res, ref_freq=ref_freq)
         plot_wat_map.set_data(waterfall_dedisp)
@@ -584,17 +590,19 @@ def _poly_max(x, y, err, w='None'):
     dx = x - x.mean()
 
     if w is None:
-      p = np.polyfit(dx, y, n)
-      err = max( [ np.std(y-np.polyval(p, dx)),  err] )
+        p = np.polyfit(dx, y, n)
+        err = max( [ np.std(y-np.polyval(p, dx)),  err] )
     else:
-      p = np.polyfit(dx,y,n,w = w)
-      err = max([ (np.sum( np.multiply(w , (y-np.polyval(p, dx))**2.0 ) )/np.sum(w))**0.5,  err])
-      #err = max( [ np.std(y-np.polyval(p, dx)),  err] )
+        p = np.polyfit(dx,y,n,w = w)
+        err = max([ (np.sum(np.multiply(
+                w, (y-np.polyval(p, dx))**2.0 ) )/np.sum(w))**0.5,  err])
+        #err = max( [ np.std(y-np.polyval(p, dx)),  err] )
     dp = np.polyder(p)
     ddp = np.polyder(dp)
     cands = np.roots(dp)
     r_cands = np.polyval(ddp, cands)
-    first_cut = cands[(cands.imag==0) & (cands.real>=min(dx)) & (cands.real<=max(dx)) & (r_cands<0)]
+    first_cut = cands[(cands.imag==0) & (cands.real>=min(dx)) 
+            & (cands.real<=max(dx)) & (r_cands<0)]
     if first_cut.size > 0:
         value = np.polyval(p, first_cut)
         best = np.real(first_cut[value.argmax()])
@@ -717,8 +725,8 @@ def _check_window(profile, window):
         window += np.abs(peak_value - peak) / 2
         peak_value = (peak_value + peak) / 2
 
-    start = np.int(peak_value - np.round(1.25 * window))
-    end = np.int(peak_value + np.round(1.25 * window))
+    start = int(peak_value - np.round(1.25 * window))
+    end = int(peak_value + np.round(1.25 * window))
 
     if start < 0:
         start = 0
@@ -889,7 +897,7 @@ def from_PSRCHIVE(fname, dm_s, dm_e, dm_step, ref_freq="top",
     """
     waterfall, f_channels, t_res = _load_psrchive(fname)
     dm_s, dm_e = _init_dm(fname, dm_s, dm_e)
-    dm_list = np.arange(np.float(dm_s), np.float(dm_e), np.float(dm_step))
+    dm_list = np.arange(float(dm_s), float(dm_e), float(dm_step))
     dm, dm_std = get_dm(waterfall, dm_list, t_res, f_channels,
                         ref_freq=ref_freq, manual_cutoff=manual_cutoff,
                         manual_bandwidth=manual_bandwidth,
@@ -988,7 +996,8 @@ def get_dm(waterfall, dm_list, t_res, f_channels, ref_freq="top",
     else:
         low_idx, up_idx = _get_f_threshold(power_spectra, mean, std)
         phase_lim = None
-        dm_curve , dm_c_err, SNR = _get_dm_curve(power_spectra, dpower_spectra, nchan)
+        dm_curve , dm_c_err, SNR = _get_dm_curve(power_spectra, 
+                                                 dpower_spectra, nchan)
         dm_curve[SNR<5.0]=dm_curve[SNR<5.0]/1e6
         #w = None
         w = SNR
@@ -1048,8 +1057,10 @@ def _dm_calculation(waterfall, power_spectra, dpower_spectra, low_idx, up_idx,
         m_fact = np.sum(np.arange(low_idx, up_idx) ** 2)
         s_fact = np.sum(np.arange(low_idx, up_idx) ** 4) ** 0.5
         dmean = mean * m_fact
-        I = np.transpose( 1.0*np.ones([dm_list.size, 1]) * ( 1.0*np.arange(low_idx,up_idx) ) ** 2.0 )
-        dstd1 = ( 1.0*(std * s_fact)**2.0 + np.sum( np.multiply(I, power_spectra[low_idx:up_idx]**2.0) ,axis=0) )**0.5
+        I = np.transpose( 1.0*np.ones([dm_list.size, 1]) * \
+                         ( 1.0*np.arange(low_idx,up_idx) ) ** 2.0 )
+        dstd1 = ( 1.0*(std * s_fact)**2.0 + np.sum( np.multiply(
+                I, power_spectra[low_idx:up_idx]**2.0) ,axis=0) )**0.5
         dm_curve = np.divide( (dm_curve -dmean) , dstd1 )
         weight = np.multiply(dm_curve, dstd1**-1.0)
         dstd = np.max(dstd1)
@@ -1084,8 +1095,8 @@ def _dm_calculation(waterfall, power_spectra, dpower_spectra, low_idx, up_idx,
       #width = int(np.mean((Heavy_weights-peak)**2)**0.5/2)
       peak  = np.mean(Heavy_weights)
       width = (np.max(Heavy_weights)-np.min(Heavy_weights))
-      Start = Heavy_weights[np.argmin(np.absolute( (peak - width)-Heavy_weights ) ) ]
-      Stop =  Heavy_weights[np.argmin(np.absolute( (peak + width)-Heavy_weights ) ) ]
+      Start = Heavy_weights[np.argmin(np.absolute((peak-width)-Heavy_weights))]
+      Stop =  Heavy_weights[np.argmin(np.absolute((peak+width)-Heavy_weights))]
 
       if Start< 0: Start=0
       if Stop > np.size(w_dm_curve): Stop = np.size(w_dm_curve)
@@ -1134,7 +1145,8 @@ def _get_parser():
         help="End DM. If None, DM will be selected from the PSRCHIVE file.",
         default=None, type=float)
     parser.add_argument(
-        "-DM_step", help="Step DM.", default=0.1, type=float)
+        "-DM_step", help="Step DM. Make sure there's enough steps", 
+        default=0.1, type=float)
     parser.add_argument(
         "-ref_freq",
         help="Reference frequency for dedispersion, " \
